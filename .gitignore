@@ -1,160 +1,319 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import time
+from datetime import datetime
+from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 
-# C extensions
-*.so
+class Cliente:
+    def __init__(self, endereco):
+        self.endereco = endereco
+        self.contas = []
+    
+    def registrar_transacao(self, conta, transacao):
+        transacao.registrar(conta)
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+    def adicionar_conta(self, conta):
+        self.contas.append(conta)
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+class PessoaFisica(Cliente):
+    def __init__(self, nome, data_nascimento, cpf, endereco):
+        super().__init__(endereco)
+        self.nome = nome
+        self.data_nascimento = data_nascimento
+        self.cpf = cpf
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+class Conta:
+    def __init__(self, numero, cliente):
+        self._saldo = 0
+        self._numero = numero
+        self.agencia = "0001"
+        self.cliente = cliente
+        self.historico = Historico()
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+    @property
+    def saldo(self):
+        return self._saldo
 
-# Translations
-*.mo
-*.pot
+    @property
+    def numero(self):
+        return self._numero
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+    @property
+    def agencia(self):
+        return self._agencia
+    
+    @property
+    def cliente(self):
+        return self._cliente
 
-# Flask stuff:
-instance/
-.webassets-cache
+    @property
+    def historico(self):
+        return self._historico
+    
+    def sacar(self, valor):
+        saldo = self.saldo
+        excedeu_saldo = valor > saldo
 
-# Scrapy stuff:
-.scrapy
+        if excedeu_saldo:
+            print("Saldo insuficiente para saque!!!")
 
-# Sphinx documentation
-docs/_build/
+        elif valor > 0:
+            self._saldo -= valor
+            print("Saque realizado com sucesso")
+            return True
+        
+        else:
+            print("!!!! OPERAÇÃO FALHOU !!!!")
+            return False
+        
+    def depositar(self, valor):
+        if valor > 0:
+            self._saldo += valor
+            print ("Depósito realizado!!!")
+            return True
+        else:
+            print("!!!!Valor inválido!!!!")
+            return False
 
-# PyBuilder
-.pybuilder/
-target/
+class ContaCorrente(Conta):
+    def __init__(self, numero, cliente, limite=500, limite_saque=3):
+        super().__init__(numero, cliente)
+        self.limite = limite
+        self.limite_saque = limite_saque
 
-# Jupyter Notebook
-.ipynb_checkpoints
+    @property
+    def cliente(self):
+        return self._cliente
+    
+    @cliente.setter
+    def cliente(self, novo_cliente):
+        self._cliente = novo_cliente   
 
-# IPython
-profile_default/
-ipython_config.py
+    @Conta.agencia.setter
+    def agencia(self, valor):
+        self._agencia = valor
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+    @property
+    def historico(self):
+        return self._historico
+    
+    @historico.setter
+    def historico(self, value):
+        self._historico = value
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+    @Conta.numero.setter
+    def numero(self, valor):
+        self._numero = valor
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
+    def sacar(self, valor):
+        numero_saques = len([transacao for transacao in self.historico.transacoes if transacao["tipo"] == Saque.__name__])
+        excedeu_limite = valor > self.limite
+        excedeu_saques = numero_saques >= self.limite_saque
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
-.pdm.toml
+        if excedeu_limite:
+            print("Saldo insuficiente para saque!!!")
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+        elif excedeu_saques:
+            print("Limite de saques excedido!!!")
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+        elif valor > self.saldo:
+            print("Saldo insuficiente para saque!!!")
 
-# SageMath parsed files
-*.sage.py
+        else:
+            self._saldo -= valor
+            print("Saque realizado com sucesso")
+            return True
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+        return False
 
-# Spyder project settings
-.spyderproject
-.spyproject
+class Historico:
+    def __init__(self):
+        self._transacoes = []
 
-# Rope project settings
-.ropeproject
+    @property
+    def transacoes(self):
+        return self._transacoes
 
-# mkdocs documentation
-/site
+    def adicionar_transacao(self, transacao):
+        self._transacoes.append(
+            {
+                "tipo": transacao.__class__.__name__,
+                "Valor": transacao.valor,
+                "Data": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+            }
+        )
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+class Transacao(ABC): 
+    @property  
+    def valor (self):
+        pass
 
-# Pyre type checker
-.pyre/
+    def registrar(self, conta):
+        pass
 
-# pytype static type analyzer
-.pytype/
+class Saque(Transacao):
+    def __init__(self, valor):
+        self._valor = valor
 
-# Cython debug symbols
-cython_debug/
+    @property
+    def valor (self):
+        return self._valor
+    
+    def registrar(self, conta):
+        sucesso_transacao = conta.sacar(self.valor)
+        if sucesso_transacao:
+            conta.historico.adicionar_transacao(self)
 
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+class Deposito(Transacao):
+    def __init__(self, valor):
+        self._valor = valor
+
+    @property
+    def valor (self):
+        return self._valor
+    
+    def registrar(self, conta):
+        sucesso_transacao = conta.depositar(self.valor)
+        if sucesso_transacao:
+            conta.historico.adicionar_transacao(self)
+
+def menu():
+    menu = """  
+        BEM VINDO AO NOSSO BANCO
+    [u] Criar cliente
+    [nc] Nova Conta
+    [d] Depositar
+    [s] Sacar
+    [e] Extrato
+    [q] Sair
+    => """
+    return (input(menu))
+
+def filtrar_cliente(cpf, clientes):
+    clientes_filtrados = [cliente for cliente in clientes if cliente.cpf == cpf]
+    return clientes_filtrados[0] if clientes_filtrados else None
+
+def recuperar_conta_cliente(cliente):
+    if not cliente.contas:
+        print("Cliente não possui conta")
+        return None
+    
+    return cliente.contas[0]
+
+def depositar(clientes):
+    cpf = input("Insira seu CPF: ")
+    cliente = filtrar_cliente(cpf, clientes)
+
+    if not cliente:
+        print("Cliente não encontrado")
+        return
+    
+    valor = float(input("Informe o valor para depósito: "))
+    transacao = Deposito(valor)
+    
+    conta = recuperar_conta_cliente(cliente)
+    if not conta:
+        return
+    
+    transacao.registrar(conta)
+
+def sacar(clientes):
+    cpf = input("Insira seu CPF: ")
+    cliente = filtrar_cliente(cpf, clientes)
+
+    if not cliente:
+        print("Cliente não encontrado")
+        return
+    
+    valor = float(input("Insira o valor para saque: "))
+    transacao = Saque(valor)
+    
+    conta = recuperar_conta_cliente(cliente)
+    if not conta:
+        return
+    
+    transacao.registrar(conta)
+
+def exibir_extrato(clientes):
+    cpf = input("Insira seu CPF: ")
+    cliente = filtrar_cliente(cpf, clientes)
+
+    if not cliente:
+        print("Cliente não encontrado")
+        return
+    
+    conta = recuperar_conta_cliente(cliente)
+    if not conta:
+        return
+    
+    print("########################## EXTRATO ##########################")
+    transacoes = conta.historico.transacoes
+
+    if not transacoes:
+        print("Não foram feitas movimentações")
+    else:
+        for transacao in transacoes:
+            print(f"{transacao['tipo']}: R$ {transacao['Valor']:.2f}")
+    print(f"Saldo: R$ {conta.saldo:.2f}")
+
+def criar_cliente(clientes):
+    cpf = input("Informe o CPF (somente números): ")
+    cliente = filtrar_cliente(cpf, clientes)
+
+    if cliente:
+        print("Cliente já existente com este CPF")
+        return
+    
+    nome = input("Digite seu nome: ")
+    data_nascimento = input("Informe a sua data de nascimento (dd-mm-aaaa): ")
+    endereco = input("Informe seu endereço (cidade - estado): ")
+
+    cliente = PessoaFisica(nome=nome, data_nascimento=data_nascimento, cpf=cpf, endereco=endereco)
+    clientes.append(cliente)
+    print("Cliente criado com sucesso")
+
+def criar_conta(numero_conta, clientes, contas):
+    cpf = input("Informe seu CPF (somente números): ")
+    cliente = filtrar_cliente(cpf, clientes)
+
+    if not cliente:
+        print("Cliente não cadastrado")
+        return
+    
+    conta = ContaCorrente(numero=numero_conta, cliente=cliente) 
+    contas.append(conta)
+    cliente.adicionar_conta(conta)  
+
+    print("Conta criada com sucesso")
+
+def main():
+    contas = []
+    clientes = []
+    
+    while True:
+        opcao = menu()
+
+        if opcao == "u":
+            criar_cliente(clientes)
+        
+        elif opcao == "nc":
+            numero_conta = len(contas) + 1
+            criar_conta(numero_conta, clientes, contas)
+
+        elif opcao == "d":
+            depositar(clientes)
+            
+        elif opcao == "s":
+            sacar(clientes)
+       
+        elif opcao == "e":
+            exibir_extrato(clientes)
+
+        elif opcao == "q":
+            print("Obrigado por utilizar nosso Sistema, até logo :)")
+            time.sleep(1)
+            break
+
+        else:
+            print("Operação inválida")
+
+if __name__ == "__main__":
+    main()
